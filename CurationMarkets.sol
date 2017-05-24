@@ -104,6 +104,9 @@ contract ContinuousToken is ERC20Token {
             totalSupply -= _amountToWithdraw;
             updateCostOfToken(totalSupply);
             LogWithdraw(_amountToWithdraw, reward);
+            return true;
+        } else {
+            throw;
         }
     }
 
@@ -138,6 +141,9 @@ contract CurationToken is ContinuousToken {
             totalBonded += _amount;
             totalBondsPerCuratorPerSubtopic[_curator][_subtopic] += _amount;
             LogBond(msg.sender, _curator, _subtopic, _amount);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -148,6 +154,9 @@ contract CurationToken is ContinuousToken {
             totalBonded -= _amount;
             totalBondsPerCuratorPerSubtopic[_curator][_subtopic] -= _amount;
             LogWithdrawBond(msg.sender, _curator, _subtopic, _amount);
+            return true;
+        } else {
+            return false;
         }
     }
 
