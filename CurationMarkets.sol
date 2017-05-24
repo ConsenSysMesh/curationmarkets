@@ -18,13 +18,13 @@ contract ContinuousToken is ERC20Token {
     uint256 baseCost = 100000000000000; //100000000000000 wei 0.0001 ether
     uint256 public costPerToken = 0;
 
-    uint8 decimals;
-    string symbol;
-    string name;
-
     uint256 public totalEverMinted;
     uint256 public totalEverWithdrawn;
     uint256 public poolBalance;
+
+    uint8 decimals;
+    string symbol;
+    string name;
 
     function ContinuousToken(uint8 _decimals, string _symbol, string _name) {
         decimals = _decimals;
@@ -51,11 +51,11 @@ contract ContinuousToken is ERC20Token {
       return s;
     }
 
-    function updateCostOfToken(uint256 supply) internal {
+    function updateCostOfToken(uint256 _supply) internal {
         //from protocol design:
         //costOfCoupon = (BaseCost + BaseCost*(1.000001618^AvailableSupply)+BaseCost*AvailableSupply/1000)
         //totalSupply == AvailableSupply
-        costPerToken = baseCost+fracExp(baseCost, 618046, supply, 2)+baseCost*supply/1000;
+        costPerToken = baseCost+fracExp(baseCost, 618046, _supply, 2)+baseCost*_supply/1000;
         LogCostOfTokenUpdate(costPerToken);
     }
 
