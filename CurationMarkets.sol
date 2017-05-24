@@ -84,6 +84,7 @@ contract ContinuousToken is ERC20Token {
 
             totalEverMinted += totalMinted;
             totalSupply += totalMinted;
+            balances[msg.sender] += totalMinted;
             poolBalance += totalCost;
 
             LogMint(totalMinted, totalCost);
