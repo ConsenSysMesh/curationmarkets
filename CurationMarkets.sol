@@ -15,6 +15,8 @@ This can be re-used without the bonding functionality.
 */
 contract ContinuousToken is ERC20Token {
 
+    uint public constant MAX_UINT = (2**256) - 1;
+
     uint256 baseCost = 100000000000000; //100000000000000 wei 0.0001 ether
     uint256 public costPerToken = 0;
 
@@ -63,7 +65,7 @@ contract ContinuousToken is ERC20Token {
     function mint(uint256 _amountToMint) payable returns (bool) {
         //balance of msg.sender increases if paid right amount according to protocol
 
-        if(_amountToMint > 0 && msg.value > 0) {
+        if(_amountToMint > 0 && (MAX_UINT - _amountToMint) >= totalSupply && msg.value > 0) {
 
             uint256 totalMinted = 0;
             uint256 totalCost = 0;
@@ -84,6 +86,7 @@ contract ContinuousToken is ERC20Token {
 
             totalEverMinted += totalMinted;
             totalSupply += totalMinted;
+            balances[msg.sender] += totalMinted;
             poolBalance += totalCost;
 
             LogMint(totalMinted, totalCost);
@@ -95,14 +98,17 @@ contract ContinuousToken is ERC20Token {
     }
 
     function withdraw(uint256 _amountToWithdraw) returns (bool) {
-        if(balances[msg.sender] - _amountToWithdraw > 0) {
+        if(_amountToWithdraw > 0 && balances[msg.sender] >= _amountToWithdraw) {
             //determine how much you can leave with.
-            uint256 reward = _amountToWithdraw/totalSupply * poolBalance; //rounding?
+            uint256 reward = _amountToWithdraw * poolBalance/totalSupply; //rounding?
             msg.sender.transfer(reward);
             balances[msg.sender] -= _amountToWithdraw;
             totalSupply -= _amountToWithdraw;
             updateCostOfToken(totalSupply);
             LogWithdraw(_amountToWithdraw, reward);
+            return true;
+        } else {
+            throw;
         }
     }
 
@@ -137,6 +143,9 @@ contract CurationToken is ContinuousToken {
             totalBonded += _amount;
             totalBondsPerCuratorPerSubtopic[_curator][_subtopic] += _amount;
             LogBond(msg.sender, _curator, _subtopic, _amount);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -147,6 +156,9 @@ contract CurationToken is ContinuousToken {
             totalBonded -= _amount;
             totalBondsPerCuratorPerSubtopic[_curator][_subtopic] -= _amount;
             LogWithdrawBond(msg.sender, _curator, _subtopic, _amount);
+            return true;
+        } else {
+            return false;
         }
     }
 
