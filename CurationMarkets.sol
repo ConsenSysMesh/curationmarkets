@@ -97,7 +97,7 @@ contract ContinuousToken is ERC20Token {
     function withdraw(uint256 _amountToWithdraw) returns (bool) {
         if(balances[msg.sender] >= _amountToWithdraw) {
             //determine how much you can leave with.
-            uint256 reward = _amountToWithdraw/totalSupply * poolBalance; //rounding?
+            uint256 reward = _amountToWithdraw * poolBalance/totalSupply; //rounding?
             msg.sender.transfer(reward);
             balances[msg.sender] -= _amountToWithdraw;
             totalSupply -= _amountToWithdraw;
