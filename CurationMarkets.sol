@@ -15,6 +15,8 @@ This can be re-used without the bonding functionality.
 */
 contract ContinuousToken is ERC20Token {
 
+    uint public constant MAX_UINT = (2**256) - 1;
+
     uint256 baseCost = 100000000000000; //100000000000000 wei 0.0001 ether
     uint256 public costPerToken = 0;
 
@@ -63,7 +65,7 @@ contract ContinuousToken is ERC20Token {
     function mint(uint256 _amountToMint) payable returns (bool) {
         //balance of msg.sender increases if paid right amount according to protocol
 
-        if(_amountToMint > 0 && msg.value > 0) {
+        if(_amountToMint > 0 && (MAX_UINT - _amountToMint) >= totalSupply && msg.value > 0) {
 
             uint256 totalMinted = 0;
             uint256 totalCost = 0;
