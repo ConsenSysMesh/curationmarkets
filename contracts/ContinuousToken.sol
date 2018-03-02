@@ -32,7 +32,12 @@ contract ContinuousToken is ERC20Token {
         decimals = _decimals;
         symbol = _symbol;
         name = _name;
-        updateCostOfToken(0); //first pass
+        // this make the deployment runs out of gas (investigation needed)
+        // updateCostOfToken(0); //first pass
+        // so following the formula:
+        // costOfToken = (BaseCost + BaseCost*(1.000001618^AvailableSupply)+BaseCost*AvailableSupply/1000)
+        // with initial AvailableSupply = 0 then:
+        costPerToken = 2 * baseCost;
     }
 
     // via: http://ethereum.stackexchange.com/questions/10425/is-there-any-efficient-way-to-compute-the-exponentiation-of-a-fraction-and-an-in/10432#10432
@@ -115,77 +120,4 @@ contract ContinuousToken is ERC20Token {
     event LogMint(uint256 amountMinted, uint256 totalCost);
     event LogWithdraw(uint256 amountWithdrawn, uint256 reward);
     event LogCostOfTokenUpdate(uint256 newCost);
-}
-
-/*
-Implements a continuous token that can be bonded to curators and subtopic for curation.
-*/
-contract CurationToken is ContinuousToken {
-
-    //token holder -> curator -> sub-topic -> amount
-    mapping (address => mapping (address => mapping(string => uint256))) public bonds;
-    mapping (address => mapping(string => uint256)) public totalBondsPerCuratorPerSubtopic;
-
-    uint256 public totalBonded = 0;
-
-    //main topic. eg #truffle. Hardcoded.
-    //sub topics examples = #truffle.features or #truffle.pullrequests
-    string topic;
-
-    function CurationToken(uint8 _decimals, string _symbol, string _name, string _topic) ContinuousToken(_decimals, _symbol, _name) {
-        topic = _topic;
-    }
-
-    function bond(address _curator, string _subtopic, uint256 _amount) returns (bool) {
-        if(balances[msg.sender] >= _amount) {
-            bonds[msg.sender][_curator][_subtopic] += _amount;
-            balances[msg.sender] -= _amount;
-            totalBonded += _amount;
-            totalBondsPerCuratorPerSubtopic[_curator][_subtopic] += _amount;
-            LogBond(msg.sender, _curator, _subtopic, _amount);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function withdrawBond(address _curator, string _subtopic, uint256 _amount) returns (bool) {
-        if(bonds[msg.sender][_curator][_subtopic] >= _amount) {
-            bonds[msg.sender][_curator][_subtopic] -= _amount;
-            balances[msg.sender] += _amount;
-            totalBonded -= _amount;
-            totalBondsPerCuratorPerSubtopic[_curator][_subtopic] -= _amount;
-            LogWithdrawBond(msg.sender, _curator, _subtopic, _amount);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-    event LogBond(address indexed holder, address curator, string subtopic, uint256 amount);
-    event LogWithdrawBond(address indexed holder, address curator, string subtopic, uint256 amount);
-
-}
-
-/*
-Back information with full backing in that subtopic
-Currently just uses event logs.
-Have to build a local DB to filter these events.
-No internal storage atm.
-*/
-contract Curator {
-
-    function back(address _token, string _subtopic, string _info) {
-        CurationToken token = CurationToken(_token);
-        LogBacking(msg.sender, _info, token.totalBondsPerCuratorPerSubtopic(msg.sender, _subtopic), token.totalBonded());
-    }
-
-    function revoke(address _token, string _subtopic, string _info) {
-        CurationToken token  = CurationToken(_token);
-        LogRevoke(msg.sender, _info, token.totalBondsPerCuratorPerSubtopic(msg.sender, _subtopic), token.totalBonded());
-    }
-
-    event LogBacking(address curator, string info, uint256 bondedAmount, uint256 totalBonded);
-    event LogRevoke(address curator, string info, uint256 bondedAmount, uint256 totalBonded);
 }
